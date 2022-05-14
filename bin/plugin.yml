@@ -1,0 +1,15 @@
+name: TalkDeServer
+version: 1.0*
+main: top.bpd.Main
+author: TalkDe
+description: A plugin is made for BPD's Server by TalkDe.
+commands: 
+  sendmessage: 
+    description: Send a message to the players.
+    usage: /sendmessage <message>
+  teams:
+    description: Set the teams.
+    usage: Please post /teams help
+  ttt:
+    description: Say to the another team.
+    usage: /ttt <teamname> <message>
