@@ -2,6 +2,7 @@ package top.bpd;
 
 import java.util.Collection;
 import java.io.*;
+import java.util.regex.*;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -36,6 +37,7 @@ public class Main extends JavaPlugin {
 		Bukkit.getPluginManager().registerEvents(new ChatEvent(), this);
 		Bukkit.getPluginManager().registerEvents(new DeathEvent(), this);
 		Bukkit.getPluginManager().registerEvents(new RespawnEvent(), this);
+		Bukkit.getPluginManager().registerEvents(new CommandEvent(), this);
 		// 四队
 		playerList = new MyPlayer[TEAM_NUM][];
 		headerList = new String[TEAM_NUM];
@@ -345,18 +347,24 @@ public class Main extends JavaPlugin {
 			} else if (args[0].equalsIgnoreCase("another") && args.length >= 3) { // 修改别名
 				boolean flag = true;
 				int num = getTeamNumber(args[1]);
-				if (num == -1) {
-					say("§4参数错误！", sender);
-					flag = false;
-				}
-				if (!sender.isOp()) {
-					flag = false;
-					say("§4你没有权限修改。", sender);
-				}
-				if (flag) {
+				int an = getTeamNumber(args[2]);
+				if (num != -1 && num == an && sender.isOp()) {
 					anotherName[num] = args[2];
 					say("修改别名成功。", sender);
 					result = true;
+				} else if (num == -1) {
+					say("§4找不到相应的队伍！", sender);
+				} else if (!sender.isOp()) {
+					say("§4你没有权限修改。", sender);
+				} else {
+					say("§4无效的队伍名。", sender);
+				}
+				
+				if (!sender.isOp()) {
+					flag = false;
+				}
+				if (flag) {
+					
 				}
 			} else if (args[0].equalsIgnoreCase("teamlist")) {
 				say("队伍列表：", sender);
@@ -464,6 +472,35 @@ public class Main extends JavaPlugin {
 		public void die(PlayerRespawnEvent event) {
 			if (!event.getPlayer().isOp() && getTeam(event.getPlayer().getName()) != -1) {
 				event.getPlayer().setGameMode(GameMode.SPECTATOR);
+			}
+		}
+	}
+	
+	/** 拦截玩家命令 */
+	private class CommandEvent implements Listener {
+		@EventHandler
+		public void com(PlayerCommandPreprocessEvent event) {
+			String comm = event.getMessage();
+			Player player = event.getPlayer();
+			String pattern;
+			Pattern p;
+			Matcher m;
+			
+			pattern = "^/say (.+)$";
+			p = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+			m = p.matcher(comm);
+			
+			if (m.find()) {
+				if (player.isOp()) {
+					say("§3[OP]§6<" + player.getName() + "> §r" + m.group(1));
+				} else if (getTeam(player.getName()) == -1) {
+					say("§6<" + player.getName() + "> §r" + m.group(1));
+				} else {
+					int team = getTeam(player.getName());
+					boolean isheader = player.getName().equals(headerList[team]);
+					say("§3[" + anotherName[team] + (isheader ? ":队长" : "") + "]§6<" + player.getName() + "> §r" + m.group(1));
+				}
+				event.setCancelled(true);
 			}
 		}
 	}
