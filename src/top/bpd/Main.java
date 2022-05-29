@@ -132,9 +132,9 @@ public class Main extends JavaPlugin {
 	 * @param player 玩家名
 	 * @return 队伍编号（未找到返回-1）
 	 */
-	public static int getTeam(String player) {
-		int i = 0;
-		int result = -1;
+	public static byte getTeam(String player) {
+		byte i = 0;
+		byte result = -1;
 		loop: for (MyPlayer[] team : playerList) {
 			for (MyPlayer obj : team) {
 				if (obj.name.equalsIgnoreCase(player)) {
@@ -149,6 +149,7 @@ public class Main extends JavaPlugin {
 	
 	/** 命令行处理 */
 	private static class MyCommand {
+		/** 接受消息 */
 		public static boolean toCommand(CommandSender sender, Command cmd, String label, String[] args) {
 			boolean result = false;
 			if (label.equalsIgnoreCase("sendmessage")) {
@@ -290,10 +291,24 @@ public class Main extends JavaPlugin {
 				}
 			} else if (args[0].equalsIgnoreCase("add") && args.length >= 3) { // 新增
 				boolean flag = true;
-				int num = getTeamNumber(args[1]);
+				byte num = getTeamNumber(args[1]);
+				Player p = Bukkit.getPlayerExact(args[2]);
+				if (p == null) {
+					flag = false;
+					say("§4此玩家不存在！", sender);
+				}
+				if (p.isOp()) {
+					flag = false;
+					say("§4你不能将管理员设为队成员！", sender);
+				}
 				if (num == -1) {
 					flag = false;
 					say("§4参数错误！", sender);
+				}
+				byte t = getTeam(p.getName());
+				if (t != -1) {
+					flag = false;
+					say("§4你不能将已有队伍的成员设为队成员，此玩家已在" + anotherName[t] + "中存在！", sender);
 				}
 				if (!sender.isOp()) {
 					flag = false;
@@ -314,6 +329,7 @@ public class Main extends JavaPlugin {
 			} else if (args[0].equalsIgnoreCase("header") && args.length >= 3) { // 设置队长
 				boolean flag = true;
 				int num = getTeamNumber(args[1]);
+				int t = getTeam(args[2]);
 				if (num == -1) {
 					say("§4参数错误！", sender);
 					flag = false;
@@ -321,6 +337,10 @@ public class Main extends JavaPlugin {
 				if (!sender.isOp()) {
 					flag = false;
 					say("§4你没有权限修改。", sender);
+				}
+				if (t == num) {
+					flag = false;
+					say("§4只能将队内成员设置为队长。", sender);
 				}
 				if (flag) {
 					headerList[num] = args[2];
@@ -379,8 +399,8 @@ public class Main extends JavaPlugin {
 		}
 		
 		/** 获取队伍编号 */
-		private static int getTeamNumber(String teamname) {
-			int num;
+		private static byte getTeamNumber(String teamname) {
+			byte num;
 			if (teamname.equalsIgnoreCase("team1") || teamname.equalsIgnoreCase(anotherName[0])) {
 				num = 0;
 			} else if (teamname.equalsIgnoreCase("team2") || teamname.equalsIgnoreCase(anotherName[1])) {
