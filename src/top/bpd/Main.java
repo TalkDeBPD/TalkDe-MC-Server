@@ -148,7 +148,7 @@ public class Main extends JavaPlugin {
 	}
 	
 	/** 命令行处理 */
-	private static class MyCommand {
+	private class MyCommand {
 		/** 接受消息 */
 		public static boolean toCommand(CommandSender sender, Command cmd, String label, String[] args) {
 			boolean result = false;
@@ -473,13 +473,23 @@ public class Main extends JavaPlugin {
 			} else if (getTeam(player.getName()) >= 0) {
 				int team = getTeam(player.getName());
 				boolean isheader = player.getName().equals(headerList[team]);
+				event.setDeathMessage("§3[" + anotherName[team] + (isheader ? ":队长" : "") + "]§6" + player.getName() + " §r阵亡了");
 				for (MyPlayer obj : playerList[team]) {
 					if (obj.name.equalsIgnoreCase(player.getName())) {
 						obj.isLive = false;
 						break;
 					}
 				}
-				event.setDeathMessage("§3[" + anotherName[team] + (isheader ? ":队长" : "") + "]§6" + player.getName() + " §r阵亡了");
+				boolean flag = false;
+				for (MyPlayer obj : playerList[team]) {
+					if (obj.isLive == true) {
+						flag = true;
+						break;
+					}
+				}
+				if (!flag) {
+					say(anotherName[team] + "已全体阵亡");
+				}
 			} else {
 				event.setDeathMessage("§6" + player.getName() + " §r阵亡了");
 			}
