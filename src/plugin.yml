@@ -2,7 +2,7 @@ name: TalkDeServer
 version: 1.0*
 main: top.bpd.Main
 author: TalkDe
-description: A plugin is made for BPD's Server by TalkDe.
+description: A plugin is made for Baipiaodang's Minecraft Server by TalkDe.
 commands: 
   sendmessage: 
     description: Send a message to the players.
