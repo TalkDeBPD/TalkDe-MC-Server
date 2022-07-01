@@ -9,7 +9,7 @@ commands:
     usage: /sendmessage <message>
   teams:
     description: Set the teams.
-    usage: Please post /teams help
+    usage: Please post '/teams help' to get the help.
   ttt:
     description: Say to the another team.
     usage: /ttt <teamname> <message>

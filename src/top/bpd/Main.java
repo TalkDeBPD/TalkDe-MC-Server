@@ -11,7 +11,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.*;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
-import top.bpd.player.MyPlayer;
 
 public class Main extends JavaPlugin {
 	/** 玩家列表 */
@@ -24,6 +23,8 @@ public class Main extends JavaPlugin {
 	public static final int TEAM_NUM = 4;
 	/** 文件 */
 	private static final File TEAMS = new File("./plugins/talkde/teams.dat");
+	/** Class */
+	private static Class<? extends Main> c;
 	
 	@Override
 	public void onEnable() {
@@ -38,6 +39,7 @@ public class Main extends JavaPlugin {
 		Bukkit.getPluginManager().registerEvents(new DeathEvent(), this);
 		Bukkit.getPluginManager().registerEvents(new RespawnEvent(), this);
 		Bukkit.getPluginManager().registerEvents(new CommandEvent(), this);
+		c = getClass();
 		// 四队
 		playerList = new MyPlayer[TEAM_NUM][];
 		headerList = new String[TEAM_NUM];
@@ -77,7 +79,7 @@ public class Main extends JavaPlugin {
 			}
 			config.close();
 		} catch (IOException e) {
-			command("出问题啦！");
+			e.printStackTrace();
 		}
 		command("[TalkDeServer] 插件加载完毕");
 	}
@@ -99,7 +101,7 @@ public class Main extends JavaPlugin {
 			}
 			config.close();
 		} catch (IOException e) {
-			command("出问题啦！");
+			e.printStackTrace();
 		}
 		System.gc();
 		command("[TalkDeServer] 信息保存完毕，插件正常退出。");
@@ -161,72 +163,6 @@ public class Main extends JavaPlugin {
 			}
 			return result;
 		}
-		
-		/** 向某队伍发送信息 */
-		private static boolean ttt(CommandSender sender, Command cmd, String[] args) {
-			boolean result = false;
-			if (args.length >= 2) {
-				int num = getTeamNumber(args[0]);
-				if (num >= 0) {
-					StringBuffer str = new StringBuffer();
-					for (int i = 1; i < args.length; ++i) {
-						str.append(args[i]);
-						str.append(' ');
-					}
-					if (sender.isOp()) {
-						String message = "§3[OP]§6<" + sender.getName() + ">§rto§3[" + anotherName[num] + "] §r" + str.toString();
-						Collection<? extends Player> cl = Bukkit.getOnlinePlayers();
-						Object[] objs = cl.toArray();
-						Player[] players = new Player[objs.length];
-						for (int i = 0; i < objs.length; ++i) {
-							players[i] = (Player)objs[i];
-						}
-						for (Player p : players) {
-							if (getTeam(p.getName()) == num || getTeam(p.getName()) < 0 || p.isOp()) {
-								say(message, p);
-							}
-						}
-						command(message);
-					} else if (getTeam(sender.getName()) >= 0) {
-						int team = getTeam(sender.getName());
-						boolean isheader = sender.getName().equals(headerList[team]);
-						String message = "§3[" + anotherName[team] + (isheader ? ":队长" : "") + "]§6<" + sender.getName() + ">§rto§3[" + anotherName[num] + "] §r" + str.toString();
-						Collection<? extends Player> cl = Bukkit.getOnlinePlayers();
-						Object[] objs = cl.toArray();
-						Player[] players = new Player[objs.length];
-						for (int i = 0; i < objs.length; ++i) {
-							players[i] = (Player)objs[i];
-						}
-						for (Player p : players) {
-							if (getTeam(p.getName()) == num || getTeam(p.getName()) == team || getTeam(p.getName()) < 0 || p.isOp()) {
-								say(message, p);
-							}
-						}
-						command(message);
-					} else {
-						String message = "§6<" + sender.getName() + ">§rto§3[" + anotherName[num] + "] §r" + str.toString();
-						Collection<? extends Player> cl = Bukkit.getOnlinePlayers();
-						Object[] objs = cl.toArray();
-						Player[] players = new Player[objs.length];
-						for (int i = 0; i < objs.length; ++i) {
-							players[i] = (Player)objs[i];
-						}
-						for (Player p : players) {
-							if (getTeam(p.getName()) == num || getTeam(p.getName()) < 0 || p.isOp()) {
-								say(message, p);
-							}
-						}
-						command(message);
-					}
-					result = true;
-				} else {
-					Main.say("§4调用参数错误！", sender);
-				}
-			} else {
-				Main.say("§4调用参数过少！", sender);
-			}
-			return result;
-		}
 
 		private static boolean sendmessage(CommandSender sender, Command cmd, String[] args) {
 			boolean result = false;
@@ -257,19 +193,16 @@ public class Main extends JavaPlugin {
 			}
 			// 参数分析
 			if (args[0].equalsIgnoreCase("help")) { // 帮助
-				say("该命令用于操作队伍信息。", sender);
-				say("显示列表：", sender);
-				say("/teams list §6<队伍名>", sender);
-				say("队伍名：代表队伍的名称，包括编号：team1/team2/team3/team4", sender);
-				say("增加人数：", sender);
-				say("/teams add §6<队伍名> <玩家名>", sender);
-				say("设置队长：", sender);
-				say("/teams header §6<队伍名> <玩家名>", sender);
-				say("注：应将队员设为队长。", sender);
-				say("设置别名：", sender);
-				say("/teams another §6<队伍名> <新名称>", sender);
-				say("队伍列表：", sender);
-				say("/teams teamlist", sender);
+				BufferedReader fin = new BufferedReader(new InputStreamReader(c.getResourceAsStream("/help/cTeams.txt")));
+				try {
+					String line;
+					while ((line = fin.readLine()) != null) {
+						say(line, sender);
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+					say("§4插件出错！", sender);
+				}
 			} else if (args[0].equalsIgnoreCase("list") && args.length >= 2) { // 显示列表
 				int num = getTeamNumber(args[1]);
 				if (num == -1) {
@@ -414,6 +347,116 @@ public class Main extends JavaPlugin {
 			}
 			return num;
 		}
+
+		/** 向某队伍发送信息 */
+		private static boolean ttt(CommandSender sender, Command cmd, String[] args) {
+			boolean result = false;
+			if (args.length >= 2) {
+				StringBuffer str = new StringBuffer();
+				for (int i = 1; i < args.length; ++i) {
+					str.append(args[i]);
+					str.append(' ');
+				}
+				int num = getTeamNumber(args[0]);
+				if (num >= 0) {
+					Collection<? extends Player> cl = Bukkit.getOnlinePlayers();
+					Object[] objs = cl.toArray();
+					Player[] players = new Player[objs.length];
+					for (int i = 0; i < objs.length; ++i) {
+						players[i] = (Player)objs[i];
+					}
+					String message;
+					if (sender.isOp()) {
+						// 发送者是管理员
+						message = "§3[OP]§6<" + sender.getName() + ">§rto§3[" + anotherName[num] + "] §r" + str.toString();
+						for (Player p : players) {
+							if (getTeam(p.getName()) == num || getTeam(p.getName()) < 0 || p.isOp()) {
+								say(message, p);
+							}
+						}
+					} else if (getTeam(sender.getName()) >= 0) {
+						// 发送者是队成员
+						int team = getTeam(sender.getName());
+						boolean isheader = sender.getName().equals(headerList[team]);
+						message = "§3[" + anotherName[team] + (isheader ? ":队长" : "") + "]§6<" + sender.getName() + ">§rto§3[" + anotherName[num] + "] §r" + str.toString();
+						for (Player p : players) {
+							if (getTeam(p.getName()) == num || getTeam(p.getName()) == team || getTeam(p.getName()) < 0 || p.isOp()) {
+								say(message, p);
+							}
+						}
+					} else {
+						// 发送者是其他人
+						message = "§6<" + sender.getName() + ">§rto§3[" + anotherName[num] + "] §r" + str.toString();
+						for (Player p : players) {
+							if (getTeam(p.getName()) == num || getTeam(p.getName()) < 0 || p.isOp()) {
+								say(message, p);
+							}
+						}
+					}
+					command(message);
+					result = true;
+				} else if (args[0].equalsIgnoreCase("others")) {
+					// 向非参与者发送
+					Collection<? extends Player> cl = Bukkit.getOnlinePlayers();
+					Object[] objs = cl.toArray();
+					Player[] players = new Player[objs.length];
+					for (int i = 0; i < objs.length; ++i) {
+						players[i] = (Player)objs[i];
+					}
+					String message;
+					if (sender.isOp()) {
+						// 发送者是管理员
+						message = "§3[OP]§6<" + sender.getName() + ">§rto§3[Others] §r" + str.toString();
+						for (Player p : players) {
+							if (getTeam(p.getName()) < 0 || p.isOp()) {
+								say(message, p);
+							}
+						}
+					} else if (getTeam(sender.getName()) >= 0) {
+						// 发送者是队成员
+						int team = getTeam(sender.getName());
+						boolean isheader = sender.getName().equals(headerList[team]);
+						message = "§3[" + anotherName[team] + (isheader ? ":队长" : "") + "]§6<" + sender.getName() + ">§rto§3[Others] §r" + str.toString();
+						for (Player p : players) {
+							if (getTeam(p.getName()) == team || getTeam(p.getName()) < 0 || p.isOp()) {
+								say(message, p);
+							}
+						}
+					} else {
+						// 发送者是其他人
+						message = "§6<" + sender.getName() + ">§rto§3[Others] §r" + str.toString();
+						for (Player p : players) {
+							if (getTeam(p.getName()) == num || getTeam(p.getName()) < 0 || p.isOp()) {
+								say(message, p);
+							}
+						}
+					}
+					command(message);
+				} else if (args[0].equalsIgnoreCase("all")) {
+					// 向所有人发送
+					String message;
+					if (sender.isOp()) {
+						// 发送者是管理员
+						message = "§3[OP]§6<" + sender.getName() + ">§rto§3[All] §r" + str.toString();
+					} else if (getTeam(sender.getName()) >= 0) {
+						// 发送者是队成员
+						int team = getTeam(sender.getName());
+						boolean isheader = sender.getName().equals(headerList[team]);
+						message = "§3[" + anotherName[team] + (isheader ? ":队长" : "") + "]§6<" + sender.getName() + ">§rto§3[All] §r" + str.toString();
+					} else {
+						// 发送者是其他人
+						message = "§6<" + sender.getName() + ">§rto§3[All] §r" + str.toString();
+					}
+					say(message);
+				} else {
+					// 找不到指定的队伍
+					Main.say("§4调用参数错误！", sender);
+				}
+			} else {
+				Main.say("§4调用参数过少！", sender);
+			}
+			return result;
+		}
 	}
 	
 	/** 玩家进入事件 */
@@ -500,13 +543,17 @@ public class Main extends JavaPlugin {
 	private class RespawnEvent implements Listener {
 		@EventHandler
 		public void die(PlayerRespawnEvent event) {
+			// 重生后将队伍成员设为旁观者
 			if (!event.getPlayer().isOp() && getTeam(event.getPlayer().getName()) != -1) {
 				event.getPlayer().setGameMode(GameMode.SPECTATOR);
 			}
 		}
 	}
 	
-	/** 拦截玩家命令 */
+	/** 拦截玩家命令
+	 * <br />
+	 * 拦截对象：/say /msg
+	 */
 	private class CommandEvent implements Listener {
 		@EventHandler
 		public void com(PlayerCommandPreprocessEvent event) {
@@ -531,6 +578,23 @@ public class Main extends JavaPlugin {
 					say("§3[" + anotherName[team] + (isheader ? ":队长" : "") + "]§6<" + player.getName() + "> §r" + m.group(1));
 				}
 				event.setCancelled(true);
+			} else {
+				pattern = "^/msg (\\S+) (.+)$";
+				p = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+				m = p.matcher(comm);
+				if (m.find()) {
+					Collection<? extends Player> cl = Bukkit.getOnlinePlayers();
+					Object[] objs = cl.toArray();
+					Player[] players = new Player[objs.length];
+					for (int i = 0; i < objs.length; ++i) {
+						players[i] = (Player)objs[i];
+					}
+					for (Player pl : players) {
+						if (pl.isOp()) {
+							say("§6" + player.getName() + "§r对§6" + m.group(1) + "§r说：" + m.group(2), pl);
+						}
+					}
+				}
 			}
 		}
 	}
